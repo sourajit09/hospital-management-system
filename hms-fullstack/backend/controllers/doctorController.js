@@ -4,9 +4,6 @@ import jwt from "jsonwebtoken";
 import appointmentModel from "../model/appointmentModel.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "suraj123456";
-const DOCTOR_EMAIL = process.env.DOCTOR_EMAIL || "doctor@example.com";
-const DOCTOR_PASSWORD = process.env.DOCTOR_PASSWORD || "doctor123";
-const allowDoctorBypass = process.env.ALLOW_DOCTOR_BYPASS !== "false"; // default true
 
 const changeAvailabilities = async (req, res) => {
   try {
@@ -40,44 +37,23 @@ const doctorList = async (req, res) => {
 const loginDoctor = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    const matchesEnvDoctor =
-      email === DOCTOR_EMAIL && password === DOCTOR_PASSWORD;
-
-    // If hitting fallback/bypass, skip DB and issue a token for demo access
-    if (matchesEnvDoctor && allowDoctorBypass) {
-      const token = jwt.sign({ id: "env-doctor" }, JWT_SECRET);
+    if (!email || !password) {
       return res.json({
-        success: true,
-        token,
-        message: "Doctor Logged in Successfully (env fallback)",
+        success: false,
+        message: "Email and password are required",
       });
     }
 
     const doctor = await doctorModel.findOne({ email });
     if (!doctor) {
-      // Allow bypass even if doctor not in DB (demo)
-      if (allowDoctorBypass) {
-        const token = jwt.sign({ id: "env-doctor" }, JWT_SECRET);
-        return res.json({
-          success: true,
-          token,
-          message: "Doctor Logged in Successfully (bypass)",
-        });
-      }
-      return res.json({ success: false, message: "Invalid Credentials" });
+      return res.json({
+        success: false,
+        message: "Doctor account not found",
+      });
     }
+
     const isMatch = await bcrypt.compare(password, doctor.password);
     if (!isMatch) {
-      // If password wrong but bypass on, still allow demo login
-      if (allowDoctorBypass) {
-        const token = jwt.sign({ id: doctor._id }, JWT_SECRET);
-        return res.json({
-          success: true,
-          token,
-          message: "Doctor Logged in Successfully (bypass)",
-        });
-      }
       return res.json({ success: false, message: "Invalid Credentials" });
     }
     const token = jwt.sign({ id: doctor._id }, JWT_SECRET);

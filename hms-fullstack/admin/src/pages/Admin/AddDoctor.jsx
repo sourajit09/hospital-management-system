@@ -92,6 +92,7 @@ const AddDoctor = () => {
             onChange={(e) => setDocImg(e.target.files[0])}
             type="file"
             id="docImage"
+            accept="image/*"
             className="hidden"
           />
           <p>

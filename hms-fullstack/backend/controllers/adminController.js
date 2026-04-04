@@ -12,6 +12,16 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const JWT_SECRET = process.env.JWT_SECRET || "suraj123456";
 
+const getImageBaseUrl = (req) => {
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const protocol =
+    typeof forwardedProto === "string"
+      ? forwardedProto.split(",")[0].trim()
+      : req.protocol;
+
+  return `${protocol}://${req.get("host")}`;
+};
+
 // API for adding doctors
 const addDoctor = async (req, res) => {
   try {
@@ -55,24 +65,54 @@ const addDoctor = async (req, res) => {
         message: "Password should be at least 8 characters long",
       });
     }
+    if (!imageFile) {
+      return res.json({
+        success: false,
+        message: "Doctor image is required",
+      });
+    }
+
+    const doctorExists = await doctorModel.findOne({ email });
+    if (doctorExists) {
+      return res.json({
+        success: false,
+        message: "Doctor with this email already exists",
+      });
+    }
+
+    let parsedAddress = address;
+    if (typeof address === "string") {
+      try {
+        parsedAddress = JSON.parse(address);
+      } catch {
+        return res.json({
+          success: false,
+          message: "Invalid address format",
+        });
+      }
+    }
 
     // Hashing doctor password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Upload Image to cloudinary server (fallback to placeholder if Cloudinary is not configured)
-    let imageUrl =
-      "https://placehold.co/300x300?text=Doctor+Image+Not+Uploaded";
+    // Use Cloudinary when configured; otherwise keep serving the uploaded file locally.
+    let imageUrl = `${getImageBaseUrl(req)}/uploads/${encodeURIComponent(
+      imageFile.filename
+    )}`;
     if (
       process.env.CLOUDINARY_NAME &&
       process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_SECRET_KEY &&
-      imageFile
+      process.env.CLOUDINARY_SECRET_KEY
     ) {
-      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-        resource_type: "image",
-      });
-      imageUrl = imageUpload.secure_url;
+      try {
+        const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+          resource_type: "image",
+        });
+        imageUrl = imageUpload.secure_url;
+      } catch (uploadError) {
+        console.error("Cloudinary upload failed, using local file:", uploadError);
+      }
     }
 
     const doctorData = {
@@ -85,7 +125,7 @@ const addDoctor = async (req, res) => {
       experience,
       about,
       fee,
-      address: JSON.parse(address),
+      address: parsedAddress,
       date: Date.now(),
     };
 
@@ -103,7 +143,7 @@ const addDoctor = async (req, res) => {
 const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const allowBypass = process.env.ALLOW_ADMIN_BYPASS !== "false"; // default true
+    const allowBypass = process.env.ALLOW_ADMIN_BYPASS === "true";
     const valid = email === ADMIN_EMAIL && password === ADMIN_PASSWORD;
 
     if (valid || allowBypass) {

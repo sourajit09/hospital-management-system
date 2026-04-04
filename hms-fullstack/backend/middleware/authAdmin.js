@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const JWT_SECRET = process.env.JWT_SECRET || "suraj123456";
-const allowBypass = process.env.ALLOW_ADMIN_BYPASS !== "false"; // default true
+const allowBypass = process.env.ALLOW_ADMIN_BYPASS === "true";
 
 // Admin Authentication Middleware
 const authAdmin = async (req, res, next) => {

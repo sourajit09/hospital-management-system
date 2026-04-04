@@ -4,6 +4,7 @@ import { AppContext } from "../context/AppContext.jsx";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate, useLocation } from "react-router-dom";
+import { axiosErrorMessage } from "../apiBase.js";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error(error);
-      toast(error.message);
+      toast.error(axiosErrorMessage(error));
     }
   };
 

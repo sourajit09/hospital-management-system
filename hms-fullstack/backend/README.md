@@ -7,11 +7,17 @@
 3. express : Using this we can we can create apis
 4. jsonwebtoken : Using this we can enables the user authentication so that user can login
 5. mongoose : this will manage our database connectivity
-6. multer : This will allows us to store our images on our coludinary storage
+6. multer : This will allows us to store uploaded images locally before serving or forwarding them to Cloudinary
 7. nodemon : this will restart our app when use make any changes in backend
 8. validator : we validate the user data coming from frontend
 9. cloudinary : this is a popular cloud-based image and video management service
 10. bcrypt : using this we will encrypt our user password and stored in database
+
+## Doctor accounts
+
+1. Admin creates each doctor account from the Add Doctor form.
+2. The doctor logs in with the email and password saved for that doctor in MongoDB.
+3. `DOCTOR_EMAIL` and `DOCTOR_PASSWORD` are no longer needed in `.env`.
 
 ## Razorpay setup
 

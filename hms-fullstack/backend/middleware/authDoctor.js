@@ -1,9 +1,5 @@
 import jwt from "jsonwebtoken";
-
-const DOCTOR_EMAIL = process.env.DOCTOR_EMAIL || "doctor@example.com";
-const DOCTOR_PASSWORD = process.env.DOCTOR_PASSWORD || "doctor123";
 const JWT_SECRET = process.env.JWT_SECRET || "suraj123456";
-const allowBypass = process.env.ALLOW_DOCTOR_BYPASS !== "false"; // default true
 
 // Doctor Authentication Middleware
 const authDoctor = async (req, res, next) => {
@@ -20,14 +16,16 @@ const authDoctor = async (req, res, next) => {
       });
     }
     const token_decode = jwt.verify(dtoken, JWT_SECRET);
-    // token may be a string or object; handle both
     const tokenDoctorId =
       typeof token_decode === "string"
-        ? token_decode
-        : token_decode?.id || token_decode?.docId || "env-doctor";
+        ? null
+        : token_decode?.id || token_decode?.docId;
 
-    if (tokenDoctorId === "env-doctor" && !allowBypass) {
-      return res.json({ success: false, message: "Invalid Credentials" });
+    if (!tokenDoctorId) {
+      return res.json({
+        success: false,
+        message: "Invalid doctor session",
+      });
     }
 
     req.body.docId = tokenDoctorId;
